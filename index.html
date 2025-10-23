@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Task Tracker - Live Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 40px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 18px;
+            color: #667eea;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 20px;
+            margin: 20px 40px;
+            border-radius: 10px;
+            border-left: 4px solid #c00;
+        }
+
+        .error h3 {
+            margin-bottom: 10px;
+        }
+
+        .project-grid-view {
+            padding: 40px;
+        }
+
+        .view-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .view-subtitle {
+            font-size: 14px;
+            color: #6c757d;
+            margin-bottom: 30px;
+        }
+
+        .refresh-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .refresh-button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .project-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 16px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .project-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+        }
+
+        .project-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .project-card h3 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .project-card h3::before {
+            content: '📁';
+            font-size: 24px;
+        }
+
+        .project-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .project-stat {
+            text-align: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .project-stat .number {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .project-stat .label {
+            font-size: 11px;
+            color: #6c757d;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .project-stat.pending .number { color: #ffc107; }
+        .project-stat.completed .number { color: #28a745; }
+        .project-stat.blocked .number { color: #dc3545; }
+        .project-stat.team .number { color: #667eea; }
+
+        .project-progress {
+            margin-top: 20px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .progress-bar-container {
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .project-detail-view {
+            display: none;
+        }
+
+        .project-detail-view.active {
+            display: block;
+        }
+
+        .project-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .project-header-left {
+            flex: 1;
+        }
+
+        .project-header h2 {
+            font-size: 28px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .project-header h2::before {
+            content: '📁';
+            font-size: 32px;
+        }
+
+        .back-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(-3px);
+        }
+
+        .back-button::before {
+            content: '←';
+            font-size: 18px;
+        }
+
+        .project-detail-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 20px;
+            padding: 30px 40px;
+            background: #f8f9fa;
+        }
+
+        .detail-stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .detail-stat-card .number {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .detail-stat-card .label {
+            font-size: 12px;
+            color: #6c757d;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-stat-card.total .number { color: #667eea; }
+        .detail-stat-card.in-progress .number { color: #ffc107; }
+        .detail-stat-card.completed .number { color: #28a745; }
+        .detail-stat-card.blocked .number { color: #dc3545; }
+        .detail-stat-card.overdue .number { color: #e74c3c; }
+
+        .team-section {
+            padding: 30px 40px;
+            background: white;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .team-members {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .team-member-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8f9fa;
+            padding: 10px 18px;
+            border-radius: 25px;
+            border: 2px solid #e9ecef;
+            font-weight: 600;
+            font-size: 14px;
+            color: #495057;
+        }
+
+        .team-member-badge::before {
+            content: '👤';
+            font-size: 18px;
+        }
+
+        .tasks-section {
+            padding: 0 40px 40px 40px;
+        }
+
+        .tasks-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .task-item {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .task-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+            transform: translateX(5px);
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .task-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            flex: 1;
+        }
+
+        .task-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-dot.not-started { background: #dc3545; }
+        .status-dot.in-progress { background: #ffc107; }
+        .status-dot.completed { background: #28a745; }
+        .status-dot.blocked { background: #e74c3c; }
+        .status-dot.on-hold { background: #6c757d; }
+
+        .status-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .task-meta {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .task-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #6c757d;
+        }
+
+        .task-meta-item strong {
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .due-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .due-badge.overdue {
+            background: #fee;
+            color: #c00;
+        }
+
+        .due-badge.urgent {
+            background: #fff4e6;
+            color: #f59e0b;
+        }
+
+        .due-badge.normal {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .task-notes {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #495057;
+            font-style: italic;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .instructions {
+            background: #fff4e6;
+            padding: 20px;
+            margin: 20px 40px;
+            border-radius: 10px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #856404;
+        }
+
+        .instructions p {
+            color: #856404;
+            margin-bottom: 8px;
+        }
+
+        .instructions a {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .project-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .project-detail-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .task-meta {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Team Task Tracker</h1>
+            <p class="subtitle">Live data from Google Sheets • Click refresh to update</p>
+        </div>
+
+        <div class="instructions" id="instructions">
+            <h3>📝 How to Update Tasks</h3>
+            <p><strong>Team Members:</strong> Update your tasks directly in the <a href="https://docs.google.com/spreadsheets/d/11TyGx16R16BYNRjYI38e9LFZD4Tck6FC33a3P66u_kg/edit" target="_blank">Google Sheet</a></p>
+            <p><strong>To View Changes:</strong> Click the "Refresh Data" button below</p>
+        </div>
+
+        <div class="loading" id="loadingIndicator">Loading your tasks</div>
+        <div class="error" id="errorMessage" style="display: none;"></div>
+
+        <div class="project-grid-view" id="projectGridView" style="display: none;">
+            <div style="padding: 40px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <h2 class="view-title">All Projects</h2>
+                        <p class="view-subtitle">Click on any project to see detailed task breakdown</p>
+                    </div>
+                    <button class="refresh-button" onclick="loadData()">🔄 Refresh Data</button>
+                </div>
+                
+                <div class="project-grid" id="projectGrid"></div>
+            </div>
+        </div>
+
+        <div class="project-detail-view" id="projectDetailView">
+            <div class="project-header">
+                <div class="project-header-left">
+                    <h2 id="projectDetailTitle">Project Name</h2>
+                    <p class="subtitle" id="projectDetailSubtitle">Task overview and team assignments</p>
+                </div>
+                <button class="back-button" onclick="showProjectGrid()">Back to Projects</button>
+            </div>
+
+            <div class="project-detail-stats" id="projectDetailStats"></div>
+
+            <div class="team-section">
+                <h3 class="section-title">👥 Team Members</h3>
+                <div class="team-members" id="teamMembersList"></div>
+            </div>
+
+            <div class="tasks-section">
+                <h3 class="section-title">📋 All Tasks</h3>
+                <div class="tasks-list" id="tasksList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // YOUR PUBLISHED SHEET URL
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-h3CRESg-c-6PQkkNpYb-kyD4eUheBbiAD-ae6h-b6CoNJn9s9JoIOfrNku5zkShSsqdiCjABYUZE/pub?output=csv';
+        
+        let allTasks = [];
+        let currentProject = null;
+
+        async function loadData() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const errorMessage = document.getElementById('errorMessage');
+            const projectGridView = document.getElementById('projectGridView');
+            
+            loadingIndicator.style.display = 'block';
+            errorMessage.style.display = 'none';
+            projectGridView.style.display = 'none';
+
+            try {
+                const response = await fetch(CSV_URL);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch data. Make sure the sheet is published to the web.');
+                }
+                
+                const csvText = await response.text();
+                allTasks = parseCSV(csvText);
+                
+                if (allTasks.length === 0) {
+                    throw new Error('No tasks found. Make sure your sheet has data with columns: Person, Project, Task, Start Date, Due Date, Status, Notes');
+                }
+                
+                loadingIndicator.style.display = 'none';
+                projectGridView.style.display = 'block';
+                renderProjectGrid();
+                
+            } catch (error) {
+                loadingIndicator.style.display = 'none';
+                errorMessage.style.display = 'block';
+                errorMessage.innerHTML = `
+                    <h3>⚠️ Error Loading Data</h3>
+                    <p>${error.message}</p>
+                    <p><strong>Troubleshooting:</strong></p>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>Make sure your Google Sheet is published (File → Share → Publish to web)</li>
+                        <li>Check that you have the correct column headers: Person, Project, Task, Start Date, Due Date, Status, Notes</li>
+                        <li>Try refreshing this page</li>
+                    </ul>
+                `;
+            }
+        }
+
+        function parseCSV(csv) {
+            const lines = csv.split('\n');
+            const tasks = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                const values = parseCSVLine(line);
+                
+                if (values.length >= 7 && values[0]) {
+                    tasks.push({
+                        person: values[0].replace(/^"(.*)"$/, '$1'),
+                        project: values[1].replace(/^"(.*)"$/, '$1'),
+                        task: values[2].replace(/^"(.*)"$/, '$1'),
+                        startDate: values[3].replace(/^"(.*)"$/, '$1'),
+                        dueDate: values[4].replace(/^"(.*)"$/, '$1'),
+                        status: values[5].replace(/^"(.*)"$/, '$1'),
+                        notes: values[6] ? values[6].replace(/^"(.*)"$/, '$1') : ''
+                    });
+                }
+            }
+            
+            return tasks;
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    if (inQuotes && line[i + 1] === '"') {
+                        current += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            result.push(current);
+            return result;
+        }
+
+        function getProjectList() {
+            const projects = {};
+            allTasks.forEach(task => {
+                if (!projects[task.project]) {
+                    projects[task.project] = [];
+                }
+                projects[task.project].push(task);
+            });
+            return projects;
+        }
+
+        function calculateDaysLeft(dueDate, status) {
+            if (status === 'Completed') return null;
+            const today = new Date();
+            const due = new Date(dueDate);
+            const diffTime = due - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        }
+
+        function getDueBadge(daysLeft) {
+            if (daysLeft === null) return '<span class="due-badge normal">✓ Done</span>';
+            if (daysLeft < 0) return `<span class="due-badge overdue">Overdue by ${Math.abs(daysLeft)}d</span>`;
+            if (daysLeft <= 3) return `<span class="due-badge urgent">Due in ${daysLeft}d</span>`;
+            return `<span class="due-badge normal">${daysLeft} days left</span>`;
+        }
+
+        function getProjectStats(tasks) {
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.status === 'Completed').length;
+            const inProgress = tasks.filter(t => t.status === 'In Progress').length;
+            const notStarted = tasks.filter(t => t.status === 'Not Started').length;
+            const blocked = tasks.filter(t => t.status === 'Blocked').length;
+            const pending = total - completed;
+            
+            const today = new Date();
+            const overdue = tasks.filter(t => {
+                const due = new Date(t.dueDate);
+                return due < today && t.status !== 'Completed';
+            }).length;
+            
+            const teamMembers = [...new Set(tasks.map(t => t.person))];
+            const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+            
+            return { total, completed, inProgress, notStarted, blocked, pending, overdue, teamMembers, progress };
+        }
+
+        function renderProjectGrid() {
+            const projects = getProjectList();
+            const grid = document.getElementById('projectGrid');
+            grid.innerHTML = '';
+
+            const projectNames = Object.keys(projects).sort();
+            
+            if (projectNames.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><h3>No projects found</h3><p>Add tasks to your Google Sheet to see projects here</p></div>';
+                return;
+            }
+
+            projectNames.forEach(projectName => {
+                const tasks = projects[projectName];
+                const stats = getProjectStats(tasks);
+                
+                const card = document.createElement('div');
+                card.className = 'project-card';
+                card.onclick = () => showProjectDetail(projectName);
+                
+                card.innerHTML = `
+                    <h3>${projectName}</h3>
+                    <div class="project-stats">
+                        <div class="project-stat pending">
+                            <div class="number">${stats.pending}</div>
+                            <div class="label">Pending</div>
+                        </div>
+                        <div class="project-stat completed">
+                            <div class="number">${stats.completed}</div>
+                            <div class="label">Completed</div>
+                        </div>
+                        <div class="project-stat blocked">
+                            <div class="number">${stats.blocked}</div>
+                            <div class="label">Blocked</div>
+                        </div>
+                        <div class="project-stat team">
+                            <div class="number">${stats.teamMembers.length}</div>
+                            <div class="label">Team</div>
+                        </div>
+                    </div>
+                    <div class="project-progress">
+                        <div class="progress-label">
+                            <span>Progress</span>
+                            <span>${stats.progress}%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: ${stats.progress}%"></div>
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function showProjectDetail(projectName) {
+            currentProject = projectName;
+            const projects = getProjectList();
+            const tasks = projects[projectName];
+            const stats = getProjectStats(tasks);
+
+            document.getElementById('projectDetailTitle').textContent = projectName;
+            document.getElementById('projectDetailSubtitle').textContent = `${stats.total} tasks • ${stats.teamMembers.length} team members`;
+
+            const statsContainer = document.getElementById('projectDetailStats');
+            statsContainer.innerHTML = `
+                <div class="detail-stat-card total">
+                    <div class="number">${stats.total}</div>
+                    <div class="label">Total Tasks</div>
+                </div>
+                <div class="detail-stat-card in-progress">
+                    <div class="number">${stats.inProgress}</div>
+                    <div class="label">In Progress</div>
+                </div>
+                <div class="detail-stat-card completed">
+                    <div class="number">${stats.completed}</div>
+                    <div class="label">Completed</div>
+                </div>
+                <div class="detail-stat-card blocked">
+                    <div class="number">${stats.blocked}</div>
+                    <div class="label">Blocked</div>
+                </div>
+                <div class="detail-stat-card overdue">
+                    <div class="number">${stats.overdue}</div>
+                    <div class="label">Overdue</div>
+                </div>
+            `;
+
+            const teamContainer = document.getElementById('teamMembersList');
+            teamContainer.innerHTML = stats.teamMembers.map(member => 
+                `<div class="team-member-badge">${member}</div>`
+            ).join('');
+
+            const tasksList = document.getElementById('tasksList');
+            tasksList.innerHTML = '';
+
+            const sortOrder = { 'Not Started': 1, 'In Progress': 2, 'Blocked': 3, 'On Hold': 4, 'Completed': 5 };
+            const sortedTasks = [...tasks].sort((a, b) => sortOrder[a.status] - sortOrder[b.status]);
+
+            sortedTasks.forEach(task => {
+                const daysLeft = calculateDaysLeft(task.dueDate, task.status);
+                const taskItem = document.createElement('div');
+                taskItem.className = 'task-item';
+                
+                taskItem.innerHTML = `
+                    <div class="task-header">
+                        <div class="task-title">${task.task}</div>
+                        <div class="task-status">
+                            <span class="status-dot ${task.status.toLowerCase().replace(/\s+/g, '-')}"></span>
+                            <span class="status-text">${task.status}</span>
+                        </div>
+                    </div>
+                    <div class="task-meta">
+                        <div class="task-meta-item">
+                            <span>👤</span>
+                            <strong>${task.person}</strong>
+                        </div>
+                        <div class="task-meta-item">
+                            <span>📅</span>
+                            <span>Due: <strong>${task.dueDate}</strong></span>
+                        </div>
+                        <div class="task-meta-item">
+                            ${getDueBadge(daysLeft)}
+                        </div>
+                    </div>
+                    ${task.notes ? `<div class="task-notes">📝 ${task.notes}</div>` : ''}
+                `;
+                
+                tasksList.appendChild(taskItem);
+            });
+
+            document.getElementById('projectGridView').style.display = 'none';
+            document.getElementById('projectDetailView').classList.add('active');
+        }
+
+        function showProjectGrid() {
+            document.getElementById('projectGridView').style.display = 'block';
+            document.getElementById('projectDetailView').classList.remove('active');
+            currentProject = null;
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
