@@ -582,9 +582,10 @@
 
         <div id="mainContent" style="display: none;">
             <div class="nav-tabs">
-                <button class="nav-tab active" onclick="switchView('projects')">📁 Projects</button>
+                <button class="nav-tab active" onclick="switchView('daily')">📅 Today</button>
+                <button class="nav-tab" onclick="switchView('projects')">📁 Projects</button>
                 <button class="nav-tab" onclick="switchView('people')">👥 By Person</button>
-                <button class="nav-tab" onclick="switchView('week')">📅 This Week</button>
+                <button class="nav-tab" onclick="switchView('week')">📆 This Week</button>
                 <button class="nav-tab" onclick="switchView('month')">📆 This Month</button>
                 <button class="nav-tab" onclick="switchView('timeline')">⏱️ Timeline</button>
             </div>
@@ -622,6 +623,14 @@
                 <button class="clear-filters" onclick="clearFilters()">Clear Filters</button>
             </div>
 
+            <!-- DAILY OVERVIEW VIEW -->
+            <div class="view-container active" id="dailyView">
+                <h2 class="view-title">Today's Tasks</h2>
+                <p class="view-subtitle">All tasks due today + overdue tasks</p>
+                <div class="stats-summary" id="dailyStats"></div>
+                <div id="dailyContent"></div>
+            </div>
+
             <!-- PROJECT DETAIL VIEW -->
             <div class="view-container" id="projectDetailView">
                 <div class="view-header">
@@ -637,7 +646,7 @@
             </div>
 
             <!-- PROJECTS VIEW -->
-            <div class="view-container active" id="projectsView">
+            <div class="view-container" id="projectsView">
                 <h2 class="view-title">All Projects</h2>
                 <p class="view-subtitle">Click on any project to see detailed task breakdown</p>
                 <div class="grid" id="projectsGrid"></div>
@@ -678,7 +687,7 @@
         
         let allTasks = [];
         let filteredTasks = [];
-        let currentView = 'projects';
+        let currentView = 'daily';
         let currentProject = null;
 
         async function loadData() {
@@ -878,11 +887,107 @@
         }
 
         function renderAllViews() {
+            renderDailyView();
             renderProjectsView();
             renderPeopleView();
             renderWeekView();
             renderMonthView();
             renderTimelineView();
+        }
+
+        function renderDailyView() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const todayTasks = filteredTasks.filter(task => {
+                const due = new Date(task.dueDate);
+                due.setHours(0, 0, 0, 0);
+                return due.getTime() === today.getTime();
+            });
+            
+            const overdueTasks = filteredTasks.filter(task => {
+                const due = new Date(task.dueDate);
+                due.setHours(0, 0, 0, 0);
+                return due < today && task.status !== 'Completed';
+            });
+            
+            const allDailyTasks = [...overdueTasks, ...todayTasks];
+            
+            // Stats
+            const total = allDailyTasks.length;
+            const completed = allDailyTasks.filter(t => t.status === 'Completed').length;
+            const inProgress = allDailyTasks.filter(t => t.status === 'In Progress').length;
+            const notStarted = allDailyTasks.filter(t => t.status === 'Not Started').length;
+            const blocked = allDailyTasks.filter(t => t.status === 'Blocked').length;
+            
+            const statsContainer = document.getElementById('dailyStats');
+            statsContainer.innerHTML = `
+                <div class="stat-card total">
+                    <div class="number">${total}</div>
+                    <div class="label">Total Today</div>
+                </div>
+                <div class="stat-card overdue">
+                    <div class="number">${overdueTasks.length}</div>
+                    <div class="label">Overdue</div>
+                </div>
+                <div class="stat-card in-progress">
+                    <div class="number">${inProgress}</div>
+                    <div class="label">In Progress</div>
+                </div>
+                <div class="stat-card completed">
+                    <div class="number">${completed}</div>
+                    <div class="label">Completed</div>
+                </div>
+                <div class="stat-card blocked">
+                    <div class="number">${blocked}</div>
+                    <div class="label">Blocked</div>
+                </div>
+            `;
+            
+            const content = document.getElementById('dailyContent');
+            
+            if (allDailyTasks.length === 0) {
+                content.innerHTML = '<div class="empty-state"><h3>No tasks for today! 🎉</h3><p>You\'re all caught up!</p></div>';
+                return;
+            }
+            
+            let html = '';
+            
+            if (overdueTasks.length > 0) {
+                html += `
+                    <div class="person-section">
+                        <div class="person-header">
+                            <div class="person-avatar" style="background: #dc3545;">⚠️</div>
+                            <div class="person-info">
+                                <h3>Overdue Tasks</h3>
+                                <p>${overdueTasks.length} task${overdueTasks.length !== 1 ? 's' : ''} need attention</p>
+                            </div>
+                        </div>
+                        <div class="tasks-list">
+                            ${overdueTasks.map(task => renderTaskItem(task)).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (todayTasks.length > 0) {
+                html += `
+                    <div class="person-section">
+                        <div class="person-header">
+                            <div class="person-avatar" style="background: #28a745;">📅</div>
+                            <div class="person-info">
+                                <h3>Due Today</h3>
+                                <p>${todayTasks.length} task${todayTasks.length !== 1 ? 's' : ''}</p>
+                            </div>
+                        </div>
+                        <div class="tasks-list">
+                            ${todayTasks.map(task => renderTaskItem(task)).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            content.innerHTML = html;
         }
 
         function renderProjectsView() {
