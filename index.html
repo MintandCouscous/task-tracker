@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Team Task Tracker - Live Dashboard</title>
+    <title>Team Task Tracker - Multi-View Dashboard</title>
     <style>
         * {
             margin: 0;
@@ -31,17 +31,36 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 30px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .header h1 {
+        .header-left h1 {
             font-size: 32px;
             margin-bottom: 5px;
             font-weight: 700;
         }
 
-        .header .subtitle {
+        .header-left .subtitle {
             font-size: 14px;
             opacity: 0.9;
+        }
+
+        .refresh-button-header {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .refresh-button-header:hover {
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .loading {
@@ -71,12 +90,45 @@
             border-left: 4px solid #c00;
         }
 
-        .error h3 {
-            margin-bottom: 10px;
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            padding: 0 40px;
+            overflow-x: auto;
         }
 
-        .project-grid-view {
+        .nav-tab {
+            padding: 18px 28px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            color: #6c757d;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .nav-tab:hover {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .nav-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: rgba(102, 126, 234, 0.08);
+        }
+
+        .view-container {
+            display: none;
             padding: 40px;
+        }
+
+        .view-container.active {
+            display: block;
         }
 
         .view-title {
@@ -92,32 +144,14 @@
             margin-bottom: 30px;
         }
 
-        .refresh-button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            transition: all 0.3s;
-        }
-
-        .refresh-button:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-        }
-
-        .project-grid {
+        .grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 25px;
             margin-top: 20px;
         }
 
-        .project-card {
+        .card {
             background: white;
             border: 2px solid #e9ecef;
             border-radius: 16px;
@@ -128,13 +162,13 @@
             overflow: hidden;
         }
 
-        .project-card:hover {
+        .card:hover {
             transform: translateY(-8px);
             box-shadow: 0 12px 24px rgba(102, 126, 234, 0.2);
             border-color: #667eea;
         }
 
-        .project-card::before {
+        .card::before {
             content: '';
             position: absolute;
             top: 0;
@@ -144,7 +178,7 @@
             background: linear-gradient(90deg, #667eea, #764ba2);
         }
 
-        .project-card h3 {
+        .card h3 {
             font-size: 20px;
             margin-bottom: 15px;
             color: #2c3e50;
@@ -153,32 +187,27 @@
             gap: 10px;
         }
 
-        .project-card h3::before {
-            content: '📁';
-            font-size: 24px;
-        }
-
-        .project-stats {
+        .card-stats {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 15px;
             margin-top: 20px;
         }
 
-        .project-stat {
+        .card-stat {
             text-align: center;
             padding: 12px;
             background: #f8f9fa;
             border-radius: 10px;
         }
 
-        .project-stat .number {
+        .card-stat .number {
             font-size: 28px;
             font-weight: 700;
             margin-bottom: 3px;
         }
 
-        .project-stat .label {
+        .card-stat .label {
             font-size: 11px;
             color: #6c757d;
             text-transform: uppercase;
@@ -186,12 +215,12 @@
             letter-spacing: 0.5px;
         }
 
-        .project-stat.pending .number { color: #ffc107; }
-        .project-stat.completed .number { color: #28a745; }
-        .project-stat.blocked .number { color: #dc3545; }
-        .project-stat.team .number { color: #667eea; }
+        .card-stat.pending .number { color: #ffc107; }
+        .card-stat.completed .number { color: #28a745; }
+        .card-stat.blocked .number { color: #dc3545; }
+        .card-stat.team .number { color: #667eea; }
 
-        .project-progress {
+        .progress {
             margin-top: 20px;
         }
 
@@ -216,145 +245,6 @@
             background: linear-gradient(90deg, #667eea, #764ba2);
             border-radius: 10px;
             transition: width 0.5s ease;
-        }
-
-        .project-detail-view {
-            display: none;
-        }
-
-        .project-detail-view.active {
-            display: block;
-        }
-
-        .project-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .project-header-left {
-            flex: 1;
-        }
-
-        .project-header h2 {
-            font-size: 28px;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .project-header h2::before {
-            content: '📁';
-            font-size: 32px;
-        }
-
-        .back-button {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .back-button:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateX(-3px);
-        }
-
-        .back-button::before {
-            content: '←';
-            font-size: 18px;
-        }
-
-        .project-detail-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 20px;
-            padding: 30px 40px;
-            background: #f8f9fa;
-        }
-
-        .detail-stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .detail-stat-card .number {
-            font-size: 36px;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-
-        .detail-stat-card .label {
-            font-size: 12px;
-            color: #6c757d;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .detail-stat-card.total .number { color: #667eea; }
-        .detail-stat-card.in-progress .number { color: #ffc107; }
-        .detail-stat-card.completed .number { color: #28a745; }
-        .detail-stat-card.blocked .number { color: #dc3545; }
-        .detail-stat-card.overdue .number { color: #e74c3c; }
-
-        .team-section {
-            padding: 30px 40px;
-            background: white;
-        }
-
-        .section-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 20px;
-            color: #2c3e50;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .team-members {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin-bottom: 30px;
-        }
-
-        .team-member-badge {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: #f8f9fa;
-            padding: 10px 18px;
-            border-radius: 25px;
-            border: 2px solid #e9ecef;
-            font-weight: 600;
-            font-size: 14px;
-            color: #495057;
-        }
-
-        .team-member-badge::before {
-            content: '👤';
-            font-size: 18px;
-        }
-
-        .tasks-section {
-            padding: 0 40px 40px 40px;
         }
 
         .tasks-list {
@@ -481,41 +371,66 @@
             margin-bottom: 10px;
         }
 
-        .instructions {
-            background: #fff4e6;
-            padding: 20px;
-            margin: 20px 40px;
-            border-radius: 10px;
-            border-left: 4px solid #ffc107;
+        .section-divider {
+            margin: 40px 0 30px 0;
+            padding-top: 30px;
+            border-top: 2px solid #e9ecef;
         }
 
-        .instructions h3 {
-            margin-bottom: 10px;
-            color: #856404;
+        .person-section {
+            margin-bottom: 40px;
         }
 
-        .instructions p {
-            color: #856404;
-            margin-bottom: 8px;
+        .person-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
         }
 
-        .instructions a {
-            color: #667eea;
-            font-weight: 600;
+        .person-avatar {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .person-info h3 {
+            font-size: 22px;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .person-info p {
+            font-size: 14px;
+            color: #6c757d;
         }
 
         @media (max-width: 768px) {
-            .project-grid {
+            .grid {
                 grid-template-columns: 1fr;
-            }
-
-            .project-detail-stats {
-                grid-template-columns: repeat(2, 1fr);
             }
 
             .task-meta {
                 flex-direction: column;
                 gap: 10px;
+            }
+
+            .nav-tabs {
+                padding: 0 20px;
+            }
+
+            .nav-tab {
+                padding: 15px 20px;
+                font-size: 13px;
             }
         }
     </style>
@@ -523,71 +438,76 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎯 Team Task Tracker</h1>
-            <p class="subtitle">Live data from Google Sheets • Click refresh to update</p>
-        </div>
-
-        <div class="instructions" id="instructions">
-            <h3>📝 How to Update Tasks</h3>
-            <p><strong>Team Members:</strong> Update your tasks directly in the <a href="https://docs.google.com/spreadsheets/d/11TyGx16R16BYNRjYI38e9LFZD4Tck6FC33a3P66u_kg/edit" target="_blank">Google Sheet</a></p>
-            <p><strong>To View Changes:</strong> Click the "Refresh Data" button below</p>
+            <div class="header-left">
+                <h1>🎯 Team Task Tracker</h1>
+                <p class="subtitle">Multi-view dashboard • Live data from Google Sheets</p>
+            </div>
+            <button class="refresh-button-header" onclick="loadData()">🔄 Refresh Data</button>
         </div>
 
         <div class="loading" id="loadingIndicator">Loading your tasks</div>
         <div class="error" id="errorMessage" style="display: none;"></div>
 
-        <div class="project-grid-view" id="projectGridView" style="display: none;">
-            <div style="padding: 40px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <div>
-                        <h2 class="view-title">All Projects</h2>
-                        <p class="view-subtitle">Click on any project to see detailed task breakdown</p>
-                    </div>
-                    <button class="refresh-button" onclick="loadData()">🔄 Refresh Data</button>
-                </div>
-                
-                <div class="project-grid" id="projectGrid"></div>
-            </div>
-        </div>
-
-        <div class="project-detail-view" id="projectDetailView">
-            <div class="project-header">
-                <div class="project-header-left">
-                    <h2 id="projectDetailTitle">Project Name</h2>
-                    <p class="subtitle" id="projectDetailSubtitle">Task overview and team assignments</p>
-                </div>
-                <button class="back-button" onclick="showProjectGrid()">Back to Projects</button>
+        <div id="mainContent" style="display: none;">
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchView('projects')">📁 Projects</button>
+                <button class="nav-tab" onclick="switchView('people')">👥 By Person</button>
+                <button class="nav-tab" onclick="switchView('week')">📅 This Week</button>
+                <button class="nav-tab" onclick="switchView('month')">📆 This Month</button>
+                <button class="nav-tab" onclick="switchView('timeline')">⏱️ Timeline</button>
             </div>
 
-            <div class="project-detail-stats" id="projectDetailStats"></div>
-
-            <div class="team-section">
-                <h3 class="section-title">👥 Team Members</h3>
-                <div class="team-members" id="teamMembersList"></div>
+            <!-- PROJECTS VIEW -->
+            <div class="view-container active" id="projectsView">
+                <h2 class="view-title">All Projects</h2>
+                <p class="view-subtitle">Click on any project to see detailed task breakdown</p>
+                <div class="grid" id="projectsGrid"></div>
             </div>
 
-            <div class="tasks-section">
-                <h3 class="section-title">📋 All Tasks</h3>
-                <div class="tasks-list" id="tasksList"></div>
+            <!-- PEOPLE VIEW -->
+            <div class="view-container" id="peopleView">
+                <h2 class="view-title">Tasks by Person</h2>
+                <p class="view-subtitle">All tasks organized by team member</p>
+                <div id="peopleContent"></div>
+            </div>
+
+            <!-- WEEK VIEW -->
+            <div class="view-container" id="weekView">
+                <h2 class="view-title">This Week's Tasks</h2>
+                <p class="view-subtitle">All tasks due in the next 7 days</p>
+                <div class="tasks-list" id="weekTasks"></div>
+            </div>
+
+            <!-- MONTH VIEW -->
+            <div class="view-container" id="monthView">
+                <h2 class="view-title">This Month's Tasks</h2>
+                <p class="view-subtitle">All tasks due this month</p>
+                <div class="tasks-list" id="monthTasks"></div>
+            </div>
+
+            <!-- TIMELINE VIEW -->
+            <div class="view-container" id="timelineView">
+                <h2 class="view-title">Timeline View</h2>
+                <p class="view-subtitle">Tasks organized by due date</p>
+                <div id="timelineContent"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // YOUR PUBLISHED SHEET URL
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-h3CRESg-c-6PQkkNpYb-kyD4eUheBbiAD-ae6h-b6CoNJn9s9JoIOfrNku5zkShSsqdiCjABYUZE/pub?output=csv';
         
         let allTasks = [];
-        let currentProject = null;
+        let currentView = 'projects';
 
         async function loadData() {
             const loadingIndicator = document.getElementById('loadingIndicator');
             const errorMessage = document.getElementById('errorMessage');
-            const projectGridView = document.getElementById('projectGridView');
+            const mainContent = document.getElementById('mainContent');
             
             loadingIndicator.style.display = 'block';
             errorMessage.style.display = 'none';
-            projectGridView.style.display = 'none';
+            mainContent.style.display = 'none';
 
             try {
                 const response = await fetch(CSV_URL);
@@ -600,12 +520,12 @@
                 allTasks = parseCSV(csvText);
                 
                 if (allTasks.length === 0) {
-                    throw new Error('No tasks found. Make sure your sheet has data with columns: Person, Project, Task, Start Date, Due Date, Status, Notes');
+                    throw new Error('No tasks found. Make sure your sheet has data.');
                 }
                 
                 loadingIndicator.style.display = 'none';
-                projectGridView.style.display = 'block';
-                renderProjectGrid();
+                mainContent.style.display = 'block';
+                renderAllViews();
                 
             } catch (error) {
                 loadingIndicator.style.display = 'none';
@@ -613,12 +533,6 @@
                 errorMessage.innerHTML = `
                     <h3>⚠️ Error Loading Data</h3>
                     <p>${error.message}</p>
-                    <p><strong>Troubleshooting:</strong></p>
-                    <ul style="margin-left: 20px; margin-top: 10px;">
-                        <li>Make sure your Google Sheet is published (File → Share → Publish to web)</li>
-                        <li>Check that you have the correct column headers: Person, Project, Task, Start Date, Due Date, Status, Notes</li>
-                        <li>Try refreshing this page</li>
-                    </ul>
                 `;
             }
         }
@@ -676,17 +590,6 @@
             return result;
         }
 
-        function getProjectList() {
-            const projects = {};
-            allTasks.forEach(task => {
-                if (!projects[task.project]) {
-                    projects[task.project] = [];
-                }
-                projects[task.project].push(task);
-            });
-            return projects;
-        }
-
         function calculateDaysLeft(dueDate, status) {
             if (status === 'Completed') return null;
             const today = new Date();
@@ -698,136 +601,15 @@
 
         function getDueBadge(daysLeft) {
             if (daysLeft === null) return '<span class="due-badge normal">✓ Done</span>';
-            if (daysLeft < 0) return `<span class="due-badge overdue">Overdue by ${Math.abs(daysLeft)}d</span>`;
+            if (daysLeft < 0) return `<span class="due-badge overdue">Overdue ${Math.abs(daysLeft)}d</span>`;
             if (daysLeft <= 3) return `<span class="due-badge urgent">Due in ${daysLeft}d</span>`;
-            return `<span class="due-badge normal">${daysLeft} days left</span>`;
+            return `<span class="due-badge normal">${daysLeft} days</span>`;
         }
 
-        function getProjectStats(tasks) {
-            const total = tasks.length;
-            const completed = tasks.filter(t => t.status === 'Completed').length;
-            const inProgress = tasks.filter(t => t.status === 'In Progress').length;
-            const notStarted = tasks.filter(t => t.status === 'Not Started').length;
-            const blocked = tasks.filter(t => t.status === 'Blocked').length;
-            const pending = total - completed;
-            
-            const today = new Date();
-            const overdue = tasks.filter(t => {
-                const due = new Date(t.dueDate);
-                return due < today && t.status !== 'Completed';
-            }).length;
-            
-            const teamMembers = [...new Set(tasks.map(t => t.person))];
-            const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
-            
-            return { total, completed, inProgress, notStarted, blocked, pending, overdue, teamMembers, progress };
-        }
-
-        function renderProjectGrid() {
-            const projects = getProjectList();
-            const grid = document.getElementById('projectGrid');
-            grid.innerHTML = '';
-
-            const projectNames = Object.keys(projects).sort();
-            
-            if (projectNames.length === 0) {
-                grid.innerHTML = '<div class="empty-state"><h3>No projects found</h3><p>Add tasks to your Google Sheet to see projects here</p></div>';
-                return;
-            }
-
-            projectNames.forEach(projectName => {
-                const tasks = projects[projectName];
-                const stats = getProjectStats(tasks);
-                
-                const card = document.createElement('div');
-                card.className = 'project-card';
-                card.onclick = () => showProjectDetail(projectName);
-                
-                card.innerHTML = `
-                    <h3>${projectName}</h3>
-                    <div class="project-stats">
-                        <div class="project-stat pending">
-                            <div class="number">${stats.pending}</div>
-                            <div class="label">Pending</div>
-                        </div>
-                        <div class="project-stat completed">
-                            <div class="number">${stats.completed}</div>
-                            <div class="label">Completed</div>
-                        </div>
-                        <div class="project-stat blocked">
-                            <div class="number">${stats.blocked}</div>
-                            <div class="label">Blocked</div>
-                        </div>
-                        <div class="project-stat team">
-                            <div class="number">${stats.teamMembers.length}</div>
-                            <div class="label">Team</div>
-                        </div>
-                    </div>
-                    <div class="project-progress">
-                        <div class="progress-label">
-                            <span>Progress</span>
-                            <span>${stats.progress}%</span>
-                        </div>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" style="width: ${stats.progress}%"></div>
-                        </div>
-                    </div>
-                `;
-                
-                grid.appendChild(card);
-            });
-        }
-
-        function showProjectDetail(projectName) {
-            currentProject = projectName;
-            const projects = getProjectList();
-            const tasks = projects[projectName];
-            const stats = getProjectStats(tasks);
-
-            document.getElementById('projectDetailTitle').textContent = projectName;
-            document.getElementById('projectDetailSubtitle').textContent = `${stats.total} tasks • ${stats.teamMembers.length} team members`;
-
-            const statsContainer = document.getElementById('projectDetailStats');
-            statsContainer.innerHTML = `
-                <div class="detail-stat-card total">
-                    <div class="number">${stats.total}</div>
-                    <div class="label">Total Tasks</div>
-                </div>
-                <div class="detail-stat-card in-progress">
-                    <div class="number">${stats.inProgress}</div>
-                    <div class="label">In Progress</div>
-                </div>
-                <div class="detail-stat-card completed">
-                    <div class="number">${stats.completed}</div>
-                    <div class="label">Completed</div>
-                </div>
-                <div class="detail-stat-card blocked">
-                    <div class="number">${stats.blocked}</div>
-                    <div class="label">Blocked</div>
-                </div>
-                <div class="detail-stat-card overdue">
-                    <div class="number">${stats.overdue}</div>
-                    <div class="label">Overdue</div>
-                </div>
-            `;
-
-            const teamContainer = document.getElementById('teamMembersList');
-            teamContainer.innerHTML = stats.teamMembers.map(member => 
-                `<div class="team-member-badge">${member}</div>`
-            ).join('');
-
-            const tasksList = document.getElementById('tasksList');
-            tasksList.innerHTML = '';
-
-            const sortOrder = { 'Not Started': 1, 'In Progress': 2, 'Blocked': 3, 'On Hold': 4, 'Completed': 5 };
-            const sortedTasks = [...tasks].sort((a, b) => sortOrder[a.status] - sortOrder[b.status]);
-
-            sortedTasks.forEach(task => {
-                const daysLeft = calculateDaysLeft(task.dueDate, task.status);
-                const taskItem = document.createElement('div');
-                taskItem.className = 'task-item';
-                
-                taskItem.innerHTML = `
+        function renderTaskItem(task) {
+            const daysLeft = calculateDaysLeft(task.dueDate, task.status);
+            return `
+                <div class="task-item">
                     <div class="task-header">
                         <div class="task-title">${task.task}</div>
                         <div class="task-status">
@@ -841,6 +623,10 @@
                             <strong>${task.person}</strong>
                         </div>
                         <div class="task-meta-item">
+                            <span>📁</span>
+                            <span>${task.project}</span>
+                        </div>
+                        <div class="task-meta-item">
                             <span>📅</span>
                             <span>Due: <strong>${task.dueDate}</strong></span>
                         </div>
@@ -849,19 +635,199 @@
                         </div>
                     </div>
                     ${task.notes ? `<div class="task-notes">📝 ${task.notes}</div>` : ''}
-                `;
-                
-                tasksList.appendChild(taskItem);
-            });
-
-            document.getElementById('projectGridView').style.display = 'none';
-            document.getElementById('projectDetailView').classList.add('active');
+                </div>
+            `;
         }
 
-        function showProjectGrid() {
-            document.getElementById('projectGridView').style.display = 'block';
-            document.getElementById('projectDetailView').classList.remove('active');
-            currentProject = null;
+        function renderAllViews() {
+            renderProjectsView();
+            renderPeopleView();
+            renderWeekView();
+            renderMonthView();
+            renderTimelineView();
+        }
+
+        function renderProjectsView() {
+            const projects = {};
+            allTasks.forEach(task => {
+                if (!projects[task.project]) {
+                    projects[task.project] = [];
+                }
+                projects[task.project].push(task);
+            });
+
+            const grid = document.getElementById('projectsGrid');
+            grid.innerHTML = '';
+
+            Object.keys(projects).sort().forEach(projectName => {
+                const tasks = projects[projectName];
+                const total = tasks.length;
+                const completed = tasks.filter(t => t.status === 'Completed').length;
+                const blocked = tasks.filter(t => t.status === 'Blocked').length;
+                const pending = total - completed;
+                const teamMembers = [...new Set(tasks.map(t => t.person))];
+                const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+                
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <h3>📁 ${projectName}</h3>
+                    <div class="card-stats">
+                        <div class="card-stat pending">
+                            <div class="number">${pending}</div>
+                            <div class="label">Pending</div>
+                        </div>
+                        <div class="card-stat completed">
+                            <div class="number">${completed}</div>
+                            <div class="label">Completed</div>
+                        </div>
+                        <div class="card-stat blocked">
+                            <div class="number">${blocked}</div>
+                            <div class="label">Blocked</div>
+                        </div>
+                        <div class="card-stat team">
+                            <div class="number">${teamMembers.length}</div>
+                            <div class="label">Team</div>
+                        </div>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-label">
+                            <span>Progress</span>
+                            <span>${progress}%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: ${progress}%"></div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderPeopleView() {
+            const people = {};
+            allTasks.forEach(task => {
+                if (!people[task.person]) {
+                    people[task.person] = [];
+                }
+                people[task.person].push(task);
+            });
+
+            const content = document.getElementById('peopleContent');
+            content.innerHTML = '';
+
+            Object.keys(people).sort().forEach(personName => {
+                const tasks = people[personName];
+                const total = tasks.length;
+                const completed = tasks.filter(t => t.status === 'Completed').length;
+                const inProgress = tasks.filter(t => t.status === 'In Progress').length;
+                
+                const section = document.createElement('div');
+                section.className = 'person-section';
+                section.innerHTML = `
+                    <div class="person-header">
+                        <div class="person-avatar">${personName.charAt(0)}</div>
+                        <div class="person-info">
+                            <h3>${personName}</h3>
+                            <p>${total} tasks • ${completed} completed • ${inProgress} in progress</p>
+                        </div>
+                    </div>
+                    <div class="tasks-list">
+                        ${tasks.map(task => renderTaskItem(task)).join('')}
+                    </div>
+                `;
+                content.appendChild(section);
+            });
+        }
+
+        function renderWeekView() {
+            const today = new Date();
+            const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+            
+            const weekTasks = allTasks.filter(task => {
+                const due = new Date(task.dueDate);
+                return due >= today && due <= weekFromNow;
+            }).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+            const container = document.getElementById('weekTasks');
+            if (weekTasks.length === 0) {
+                container.innerHTML = '<div class="empty-state"><h3>No tasks due this week</h3><p>You\'re all caught up! 🎉</p></div>';
+            } else {
+                container.innerHTML = weekTasks.map(task => renderTaskItem(task)).join('');
+            }
+        }
+
+        function renderMonthView() {
+            const today = new Date();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+            
+            const monthTasks = allTasks.filter(task => {
+                const due = new Date(task.dueDate);
+                return due.getMonth() === currentMonth && due.getFullYear() === currentYear;
+            }).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+            const container = document.getElementById('monthTasks');
+            if (monthTasks.length === 0) {
+                container.innerHTML = '<div class="empty-state"><h3>No tasks due this month</h3></div>';
+            } else {
+                container.innerHTML = monthTasks.map(task => renderTaskItem(task)).join('');
+            }
+        }
+
+        function renderTimelineView() {
+            const tasksByDate = {};
+            allTasks.forEach(task => {
+                const date = task.dueDate;
+                if (!tasksByDate[date]) {
+                    tasksByDate[date] = [];
+                }
+                tasksByDate[date].push(task);
+            });
+
+            const sortedDates = Object.keys(tasksByDate).sort((a, b) => new Date(a) - new Date(b));
+            
+            const content = document.getElementById('timelineContent');
+            content.innerHTML = '';
+
+            sortedDates.forEach(date => {
+                const tasks = tasksByDate[date];
+                const section = document.createElement('div');
+                section.className = 'person-section';
+                
+                const dateObj = new Date(date);
+                const today = new Date();
+                const isOverdue = dateObj < today;
+                const isToday = dateObj.toDateString() === today.toDateString();
+                
+                let dateLabel = date;
+                if (isToday) dateLabel = `${date} (Today)`;
+                else if (isOverdue) dateLabel = `${date} (Overdue)`;
+                
+                section.innerHTML = `
+                    <div class="person-header">
+                        <div class="person-avatar">📅</div>
+                        <div class="person-info">
+                            <h3>${dateLabel}</h3>
+                            <p>${tasks.length} task${tasks.length !== 1 ? 's' : ''} due</p>
+                        </div>
+                    </div>
+                    <div class="tasks-list">
+                        ${tasks.map(task => renderTaskItem(task)).join('')}
+                    </div>
+                `;
+                content.appendChild(section);
+            });
+        }
+
+        function switchView(viewName) {
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.view-container').forEach(view => view.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(viewName + 'View').classList.add('active');
+            
+            currentView = viewName;
         }
 
         loadData();
