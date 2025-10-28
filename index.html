@@ -125,11 +125,19 @@
         .filters-bar {
             display: flex;
             gap: 15px;
-            padding: 20px 40px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
+            padding: 25px 40px;
+            background: #ffffff;
+            border-bottom: 3px solid #667eea;
             flex-wrap: wrap;
             align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .filters-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #667eea;
+            margin-right: 20px;
         }
 
         .filter-group {
@@ -139,46 +147,51 @@
         }
 
         .filter-group label {
-            font-weight: 600;
-            font-size: 13px;
-            color: #495057;
+            font-weight: 700;
+            font-size: 14px;
+            color: #2c3e50;
         }
 
         select, input[type="text"] {
-            padding: 8px 12px;
-            border: 2px solid #e9ecef;
-            border-radius: 6px;
+            padding: 12px 16px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
             font-size: 14px;
+            font-weight: 500;
             background: white;
             cursor: pointer;
             transition: all 0.3s;
-            min-width: 150px;
+            min-width: 180px;
         }
 
         select:hover, input[type="text"]:hover {
-            border-color: #667eea;
+            border-color: #5568d3;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
         }
 
         select:focus, input[type="text"]:focus {
             outline: none;
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
         }
 
         .clear-filters {
-            padding: 8px 16px;
+            padding: 12px 24px;
             background: #dc3545;
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
+            font-size: 14px;
+            font-weight: 700;
             transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
         }
 
         .clear-filters:hover {
             background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
         }
 
         .view-container {
@@ -578,6 +591,7 @@
 
             <!-- FILTERS -->
             <div class="filters-bar" id="filtersBar">
+                <div class="filters-title">🔍 FILTERS:</div>
                 <div class="filter-group">
                     <label>👤 Person:</label>
                     <select id="filterPerson" onchange="applyFilters()">
