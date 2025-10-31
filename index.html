@@ -90,6 +90,70 @@
             border-left: 4px solid #c00;
         }
 
+        .setup-instructions {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 40px;
+            color: #856404;
+        }
+
+        .setup-instructions h2 {
+            color: #856404;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .setup-instructions h3 {
+            color: #856404;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .setup-instructions ol {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+
+        .setup-instructions li {
+            margin-bottom: 10px;
+        }
+
+        .setup-instructions code {
+            background: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #d63384;
+        }
+
+        .setup-instructions .highlight {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 600;
+        }
+
+        .test-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+
+        .test-button:hover {
+            background: #218838;
+        }
+
         .info-banner {
             background: #e3f2fd;
             color: #1565c0;
@@ -103,6 +167,17 @@
 
         .info-banner strong {
             font-weight: 700;
+        }
+
+        .success-banner {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px 40px;
+            border-bottom: 2px solid #28a745;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .nav-tabs {
@@ -509,7 +584,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* Substage styles */
         .substage-badge {
             display: inline-flex;
             align-items: center;
@@ -611,157 +685,191 @@
             <button class="refresh-button-header" onclick="loadData()">🔄 Refresh Data</button>
         </div>
 
-        <div class="info-banner">
-            ℹ️ <strong>Substage Setup:</strong> To track workflow stages, add a "Substage" column (H) in your Google Sheet with values: Preparation, Prepared, In Viewer, or Sent to Client (for In Progress tasks only)
-        </div>
-
-        <div class="nav-tabs">
-            <button class="nav-tab active" onclick="switchView('overview')">📈 Overview</button>
-            <button class="nav-tab" onclick="switchView('projects')">📁 Projects</button>
-            <button class="nav-tab" onclick="switchView('people')">👥 People</button>
-            <button class="nav-tab" onclick="switchView('week')">📅 This Week</button>
-            <button class="nav-tab" onclick="switchView('month')">📆 This Month</button>
-            <button class="nav-tab" onclick="switchView('timeline')">🕐 Timeline</button>
-            <button class="nav-tab" onclick="switchView('workflow')">🔄 Workflow Stages</button>
-        </div>
-
-        <div class="filters-bar">
-            <div class="filters-title">🔍 Filters</div>
+        <div id="setupInstructions" class="setup-instructions" style="display: none;">
+            <h2>🔧 Setup Required: Make Your Google Sheet Public</h2>
             
-            <div class="filter-group">
-                <label for="statusFilter">Status:</label>
-                <select id="statusFilter" onchange="applyFilters()">
-                    <option value="">All Statuses</option>
-                </select>
+            <p><strong>The dashboard cannot connect to your Google Sheet yet.</strong> Follow these steps to enable access:</p>
+            
+            <h3>Step 1: Open Share Settings</h3>
+            <ol>
+                <li>Go to your Google Sheet: <a href="https://docs.google.com/spreadsheets/d/11TyGx16R16BYNRjYI38e9LFZD4Tck6FC33a3P66u_kg/edit" target="_blank">Open Sheet</a></li>
+                <li>Click the <strong>"Share"</strong> button in the top-right corner</li>
+            </ol>
+
+            <h3>Step 2: Change Access Settings</h3>
+            <ol>
+                <li>Under "General access", click the dropdown that says "Restricted"</li>
+                <li>Select <strong>"Anyone with the link"</strong></li>
+                <li>Make sure the role is set to <strong>"Viewer"</strong></li>
+                <li>Click <strong>"Done"</strong></li>
+            </ol>
+
+            <div class="highlight">
+                ⚠️ This allows anyone with the link to VIEW your sheet (not edit). The dashboard only reads data.
             </div>
 
-            <div class="filter-group" id="substageFilterGroup" style="display: none;">
-                <label for="substageFilter">Workflow Stage:</label>
-                <select id="substageFilter" onchange="applyFilters()">
-                    <option value="">All Stages</option>
-                    <option value="Preparation">Preparation</option>
-                    <option value="Prepared">Prepared</option>
-                    <option value="In Viewer">In Viewer</option>
-                    <option value="Sent to Client">Sent to Client</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label for="projectFilter">Project:</label>
-                <select id="projectFilter" onchange="applyFilters()">
-                    <option value="">All Projects</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label for="personFilter">Person:</label>
-                <select id="personFilter" onchange="applyFilters()">
-                    <option value="">All People</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label for="searchFilter">Search:</label>
-                <input type="text" id="searchFilter" placeholder="Search tasks..." oninput="applyFilters()">
-            </div>
-
-            <button class="clear-filters" onclick="clearFilters()">✖ Clear All</button>
+            <h3>Step 3: Test Connection</h3>
+            <p>After making your sheet public, click the button below to test the connection:</p>
+            <button class="test-button" onclick="loadData()">Test Connection & Load Data</button>
         </div>
 
-        <div id="loading" class="loading">Loading tasks from Google Sheets</div>
+        <div id="successBanner" class="success-banner" style="display: none;">
+            ✅ <strong>Connected!</strong> Successfully loaded <span id="taskCount">0</span> tasks from your Google Sheet.
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">Loading tasks from Google Sheets</div>
         <div id="error" class="error" style="display: none;"></div>
 
-        <!-- Overview View -->
-        <div id="overviewView" class="view-container active">
-            <div class="view-header">
-                <div>
-                    <h2 class="view-title">Dashboard Overview</h2>
-                    <p class="view-subtitle">Complete view of all tasks and team progress</p>
-                </div>
+        <div id="mainContent" style="display: none;">
+            <div class="info-banner">
+                ℹ️ <strong>Substage Setup:</strong> Add a "Substage" column (H) with values: Preparation, Prepared, In Viewer, or Sent to Client
             </div>
-            <div id="overviewStats" class="stats-grid"></div>
-            <div id="workflowStagesOverview"></div>
-            <div id="overviewContent"></div>
-        </div>
 
-        <!-- Projects View -->
-        <div id="projectsView" class="view-container">
-            <div class="view-header">
-                <div>
-                    <h2 class="view-title">Projects</h2>
-                    <p class="view-subtitle">All active projects</p>
-                </div>
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchView('overview')">📈 Overview</button>
+                <button class="nav-tab" onclick="switchView('projects')">📁 Projects</button>
+                <button class="nav-tab" onclick="switchView('people')">👥 People</button>
+                <button class="nav-tab" onclick="switchView('week')">📅 This Week</button>
+                <button class="nav-tab" onclick="switchView('month')">📆 This Month</button>
+                <button class="nav-tab" onclick="switchView('timeline')">🕐 Timeline</button>
+                <button class="nav-tab" onclick="switchView('workflow')">🔄 Workflow Stages</button>
             </div>
-            <div id="projectsGrid" class="projects-grid"></div>
-        </div>
 
-        <!-- Project Detail View -->
-        <div id="projectDetailView" class="view-container">
-            <div class="view-header">
-                <div>
-                    <h2 id="projectDetailTitle" class="view-title"></h2>
-                    <p id="projectDetailSubtitle" class="view-subtitle"></p>
+            <div class="filters-bar">
+                <div class="filters-title">🔍 Filters</div>
+                
+                <div class="filter-group">
+                    <label for="statusFilter">Status:</label>
+                    <select id="statusFilter" onchange="applyFilters()">
+                        <option value="">All Statuses</option>
+                    </select>
                 </div>
-                <button class="back-button" onclick="backToProjects()">← Back to Projects</button>
-            </div>
-            <div id="projectDetailStats" class="stats-grid"></div>
-            <div id="projectWorkflowStages"></div>
-            <div id="projectDetailTasks"></div>
-        </div>
 
-        <!-- People View -->
-        <div id="peopleView" class="view-container">
-            <div class="view-header">
-                <div>
-                    <h2 class="view-title">Team Members</h2>
-                    <p class="view-subtitle">Tasks grouped by person</p>
+                <div class="filter-group" id="substageFilterGroup" style="display: none;">
+                    <label for="substageFilter">Workflow Stage:</label>
+                    <select id="substageFilter" onchange="applyFilters()">
+                        <option value="">All Stages</option>
+                        <option value="Preparation">Preparation</option>
+                        <option value="Prepared">Prepared</option>
+                        <option value="In Viewer">In Viewer</option>
+                        <option value="Sent to Client">Sent to Client</option>
+                    </select>
                 </div>
-            </div>
-            <div id="peopleContent"></div>
-        </div>
 
-        <!-- This Week View -->
-        <div id="weekView" class="view-container">
-            <div class="view-header">
-                <div>
-                    <h2 class="view-title">This Week</h2>
-                    <p class="view-subtitle">Tasks due in the next 7 days</p>
+                <div class="filter-group">
+                    <label for="projectFilter">Project:</label>
+                    <select id="projectFilter" onchange="applyFilters()">
+                        <option value="">All Projects</option>
+                    </select>
                 </div>
-            </div>
-            <div id="weekTasks"></div>
-        </div>
 
-        <!-- This Month View -->
-        <div id="monthView" class="view-container">
-            <div class="view-header">
-                <div>
-                    <h2 class="view-title">This Month</h2>
-                    <p class="view-subtitle">All tasks due this month</p>
+                <div class="filter-group">
+                    <label for="personFilter">Person:</label>
+                    <select id="personFilter" onchange="applyFilters()">
+                        <option value="">All People</option>
+                    </select>
                 </div>
-            </div>
-            <div id="monthTasks"></div>
-        </div>
 
-        <!-- Timeline View -->
-        <div id="timelineView" class="view-container">
-            <div class="view-header">
-                <div>
-                    <h2 class="view-title">Timeline</h2>
-                    <p class="view-subtitle">Tasks organized by due date</p>
+                <div class="filter-group">
+                    <label for="searchFilter">Search:</label>
+                    <input type="text" id="searchFilter" placeholder="Search tasks..." oninput="applyFilters()">
                 </div>
-            </div>
-            <div id="timelineContent"></div>
-        </div>
 
-        <!-- Workflow Stages View -->
-        <div id="workflowView" class="view-container">
-            <div class="view-header">
-                <div>
-                    <h2 class="view-title">Workflow Stages</h2>
-                    <p class="view-subtitle">In Progress tasks organized by workflow stage</p>
-                </div>
+                <button class="clear-filters" onclick="clearFilters()">✖ Clear All</button>
             </div>
-            <div id="workflowContent"></div>
+
+            <!-- Overview View -->
+            <div id="overviewView" class="view-container active">
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Dashboard Overview</h2>
+                        <p class="view-subtitle">Complete view of all tasks and team progress</p>
+                    </div>
+                </div>
+                <div id="overviewStats" class="stats-grid"></div>
+                <div id="workflowStagesOverview"></div>
+                <div id="overviewContent"></div>
+            </div>
+
+            <!-- Projects View -->
+            <div id="projectsView" class="view-container">
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Projects</h2>
+                        <p class="view-subtitle">All active projects</p>
+                    </div>
+                </div>
+                <div id="projectsGrid" class="projects-grid"></div>
+            </div>
+
+            <!-- Project Detail View -->
+            <div id="projectDetailView" class="view-container">
+                <div class="view-header">
+                    <div>
+                        <h2 id="projectDetailTitle" class="view-title"></h2>
+                        <p id="projectDetailSubtitle" class="view-subtitle"></p>
+                    </div>
+                    <button class="back-button" onclick="backToProjects()">← Back to Projects</button>
+                </div>
+                <div id="projectDetailStats" class="stats-grid"></div>
+                <div id="projectWorkflowStages"></div>
+                <div id="projectDetailTasks"></div>
+            </div>
+
+            <!-- People View -->
+            <div id="peopleView" class="view-container">
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Team Members</h2>
+                        <p class="view-subtitle">Tasks grouped by person</p>
+                    </div>
+                </div>
+                <div id="peopleContent"></div>
+            </div>
+
+            <!-- This Week View -->
+            <div id="weekView" class="view-container">
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">This Week</h2>
+                        <p class="view-subtitle">Tasks due in the next 7 days</p>
+                    </div>
+                </div>
+                <div id="weekTasks"></div>
+            </div>
+
+            <!-- This Month View -->
+            <div id="monthView" class="view-container">
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">This Month</h2>
+                        <p class="view-subtitle">All tasks due this month</p>
+                    </div>
+                </div>
+                <div id="monthTasks"></div>
+            </div>
+
+            <!-- Timeline View -->
+            <div id="timelineView" class="view-container">
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Timeline</h2>
+                        <p class="view-subtitle">Tasks organized by due date</p>
+                    </div>
+                </div>
+                <div id="timelineContent"></div>
+            </div>
+
+            <!-- Workflow Stages View -->
+            <div id="workflowView" class="view-container">
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Workflow Stages</h2>
+                        <p class="view-subtitle">In Progress tasks organized by workflow stage</p>
+                    </div>
+                </div>
+                <div id="workflowContent"></div>
+            </div>
         </div>
     </div>
 
@@ -777,9 +885,14 @@
         async function loadData() {
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
+            const setupInstructions = document.getElementById('setupInstructions');
+            const mainContent = document.getElementById('mainContent');
+            const successBanner = document.getElementById('successBanner');
             
             loading.style.display = 'block';
             error.style.display = 'none';
+            setupInstructions.style.display = 'none';
+            successBanner.style.display = 'none';
 
             try {
                 Papa.parse(GOOGLE_SHEET_CSV_URL, {
@@ -789,11 +902,14 @@
                     complete: function(results) {
                         console.log('Parsed data:', results.data);
                         
+                        if (!results.data || results.data.length === 0) {
+                            throw new Error('No data received from Google Sheet');
+                        }
+
                         // Parse the data from Google Sheets
                         allTasks = results.data
-                            .filter(row => row.x && row.Project && row.Task && row.Status) // Filter out empty rows
+                            .filter(row => row.x && row.Project && row.Task && row.Status)
                             .map((row, index) => {
-                                // Normalize status
                                 let status = row.Status.trim();
                                 if (status.toLowerCase() === 'in progress') status = 'In Progress';
                                 if (status.toLowerCase() === 'not started') status = 'Not Started';
@@ -809,29 +925,43 @@
                                     dueDate: row['Due Date'] || '',
                                     status: status,
                                     notes: row.Notes || '',
-                                    // Look for substage in column H or parse from notes
                                     substage: row.Substage || parseSubstageFromNotes(row.Notes, status)
                                 };
                             });
                         
                         filteredTasks = [...allTasks];
                         
+                        loading.style.display = 'none';
+                        setupInstructions.style.display = 'none';
+                        mainContent.style.display = 'block';
+                        successBanner.style.display = 'flex';
+                        document.getElementById('taskCount').textContent = allTasks.length;
+                        
                         populateFilters();
                         renderCurrentView();
-                        loading.style.display = 'none';
                     },
                     error: function(err) {
                         console.error('Parse error:', err);
-                        error.textContent = 'Error loading tasks: ' + err.message + '. Make sure the Google Sheet is publicly accessible.';
-                        error.style.display = 'block';
                         loading.style.display = 'none';
+                        
+                        if (err.message && err.message.includes('404')) {
+                            setupInstructions.style.display = 'block';
+                            mainContent.style.display = 'none';
+                        } else {
+                            error.textContent = 'Error loading tasks: ' + err.message + '. The Google Sheet may not be publicly accessible.';
+                            error.style.display = 'block';
+                            setupInstructions.style.display = 'block';
+                            mainContent.style.display = 'none';
+                        }
                     }
                 });
             } catch (err) {
                 console.error('Error loading data:', err);
-                error.textContent = 'Error loading tasks: ' + err.message;
-                error.style.display = 'block';
                 loading.style.display = 'none';
+                setupInstructions.style.display = 'block';
+                mainContent.style.display = 'none';
+                error.textContent = 'Error: Could not connect to Google Sheet. Please make sure it is publicly accessible.';
+                error.style.display = 'block';
             }
         }
 
@@ -873,7 +1003,6 @@
             const personFilter = document.getElementById('personFilter').value;
             const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
 
-            // Show/hide substage filter based on status selection
             const substageGroup = document.getElementById('substageFilterGroup');
             if (statusFilter === 'In Progress' || statusFilter === '') {
                 substageGroup.style.display = 'flex';
@@ -1004,7 +1133,6 @@
                 `;
             });
             
-            // Add count for tasks without substage
             const noSubstage = inProgressTasks.filter(t => !t.substage).length;
             if (noSubstage > 0) {
                 html += `
@@ -1391,6 +1519,7 @@
             document.getElementById(viewName + 'View').classList.add('active');
         }
 
+        // Try to load data on page load
         loadData();
     </script>
 </body>
