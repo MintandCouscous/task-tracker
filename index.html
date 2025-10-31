@@ -90,6 +90,21 @@
             border-left: 4px solid #c00;
         }
 
+        .info-banner {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 15px 40px;
+            border-bottom: 2px solid #1976d2;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-banner strong {
+            font-weight: 700;
+        }
+
         .nav-tabs {
             display: flex;
             background: #f8f9fa;
@@ -362,7 +377,6 @@
         .task-item.not-started { border-left-color: #6c757d; }
         .task-item.in-progress { border-left-color: #f57c00; }
         .task-item.blocked { border-left-color: #c62828; }
-        .task-item.on-hold { border-left-color: #ffc107; }
         .task-item.completed { border-left-color: #2e7d32; }
 
         .task-header {
@@ -414,7 +428,6 @@
         .status-badge.not-started { background: #e9ecef; color: #6c757d; }
         .status-badge.in-progress { background: #fff3e0; color: #f57c00; }
         .status-badge.blocked { background: #ffebee; color: #c62828; }
-        .status-badge.on-hold { background: #fffde7; color: #f57f17; }
         .status-badge.completed { background: #e8f5e9; color: #2e7d32; }
 
         .person-section {
@@ -496,7 +509,7 @@
             letter-spacing: 0.5px;
         }
 
-        /* New styles for substages */
+        /* Substage styles */
         .substage-badge {
             display: inline-flex;
             align-items: center;
@@ -514,23 +527,6 @@
         .substage-badge.prepared { background: #e6f7ff; color: #0066cc; border: 1px solid #99d6ff; }
         .substage-badge.in-viewer { background: #f3e5f5; color: #7b1fa2; border: 1px solid #d4a5e5; }
         .substage-badge.sent-to-client { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
-
-        .substage-selector {
-            padding: 6px 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            background: white;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-left: 8px;
-        }
-
-        .substage-selector:hover {
-            border-color: #667eea;
-            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.2);
-        }
 
         .substage-stats {
             display: grid;
@@ -593,6 +589,16 @@
             font-size: 13px;
             font-weight: 700;
         }
+
+        .notes-text {
+            color: #6c757d;
+            font-size: 13px;
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -603,6 +609,10 @@
                 <div class="subtitle">Multi-view dashboard with workflow stages</div>
             </div>
             <button class="refresh-button-header" onclick="loadData()">🔄 Refresh Data</button>
+        </div>
+
+        <div class="info-banner">
+            ℹ️ <strong>Substage Setup:</strong> To track workflow stages, add a "Substage" column (H) in your Google Sheet with values: Preparation, Prepared, In Viewer, or Sent to Client (for In Progress tasks only)
         </div>
 
         <div class="nav-tabs">
@@ -658,7 +668,7 @@
             <button class="clear-filters" onclick="clearFilters()">✖ Clear All</button>
         </div>
 
-        <div id="loading" class="loading">Loading tasks</div>
+        <div id="loading" class="loading">Loading tasks from Google Sheets</div>
         <div id="error" class="error" style="display: none;"></div>
 
         <!-- Overview View -->
@@ -755,25 +765,14 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script>
         let allTasks = [];
         let filteredTasks = [];
         let currentView = 'overview';
         let currentProject = null;
 
-        // Sample data with substages
-        const sampleTasks = [
-            { taskId: 'T001', name: 'Design Homepage', person: 'Alice Johnson', project: 'Website Redesign', status: 'In Progress', substage: 'In Viewer', dueDate: '2025-11-05', description: 'Create mockups for new homepage' },
-            { taskId: 'T002', name: 'API Integration', person: 'Bob Smith', project: 'Mobile App', status: 'In Progress', substage: 'Preparation', dueDate: '2025-11-08', description: 'Integrate payment gateway API' },
-            { taskId: 'T003', name: 'Database Migration', person: 'Charlie Davis', project: 'Backend Upgrade', status: 'Completed', substage: null, dueDate: '2025-10-28', description: 'Migrate to PostgreSQL' },
-            { taskId: 'T004', name: 'User Testing', person: 'Diana Martinez', project: 'Website Redesign', status: 'In Progress', substage: 'Prepared', dueDate: '2025-11-02', description: 'Conduct user testing sessions' },
-            { taskId: 'T005', name: 'Documentation', person: 'Alice Johnson', project: 'Mobile App', status: 'Not Started', substage: null, dueDate: '2025-11-15', description: 'Write API documentation' },
-            { taskId: 'T006', name: 'Bug Fixes', person: 'Bob Smith', project: 'Backend Upgrade', status: 'Blocked', substage: null, dueDate: '2025-11-01', description: 'Fix critical bugs' },
-            { taskId: 'T007', name: 'Marketing Campaign', person: 'Eve Wilson', project: 'Product Launch', status: 'In Progress', substage: 'Sent to Client', dueDate: '2025-11-10', description: 'Plan marketing campaign' },
-            { taskId: 'T008', name: 'Performance Optimization', person: 'Charlie Davis', project: 'Backend Upgrade', status: 'In Progress', substage: 'In Viewer', dueDate: '2025-11-06', description: 'Optimize database queries' },
-            { taskId: 'T009', name: 'Content Creation', person: 'Diana Martinez', project: 'Website Redesign', status: 'In Progress', substage: 'Preparation', dueDate: '2025-11-04', description: 'Create blog content' },
-            { taskId: 'T010', name: 'Security Audit', person: 'Alice Johnson', project: 'Mobile App', status: 'On Hold', substage: null, dueDate: '2025-11-20', description: 'Conduct security audit' },
-        ];
+        const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/11TyGx16R16BYNRjYI38e9LFZD4Tck6FC33a3P66u_kg/export?format=csv&gid=0';
 
         async function loadData() {
             const loading = document.getElementById('loading');
@@ -783,19 +782,70 @@
             error.style.display = 'none';
 
             try {
-                // Using sample data
-                allTasks = sampleTasks;
-                filteredTasks = [...allTasks];
-                
-                populateFilters();
-                renderCurrentView();
-                loading.style.display = 'none';
+                Papa.parse(GOOGLE_SHEET_CSV_URL, {
+                    download: true,
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        console.log('Parsed data:', results.data);
+                        
+                        // Parse the data from Google Sheets
+                        allTasks = results.data
+                            .filter(row => row.x && row.Project && row.Task && row.Status) // Filter out empty rows
+                            .map((row, index) => {
+                                // Normalize status
+                                let status = row.Status.trim();
+                                if (status.toLowerCase() === 'in progress') status = 'In Progress';
+                                if (status.toLowerCase() === 'not started') status = 'Not Started';
+                                if (status.toLowerCase() === 'completed') status = 'Completed';
+                                if (status.toLowerCase() === 'blocked') status = 'Blocked';
+                                
+                                return {
+                                    taskId: 'T' + String(index + 1).padStart(3, '0'),
+                                    person: row.x.trim(),
+                                    project: row.Project.trim(),
+                                    name: row.Task.trim(),
+                                    startDate: row['Start Date'] || '',
+                                    dueDate: row['Due Date'] || '',
+                                    status: status,
+                                    notes: row.Notes || '',
+                                    // Look for substage in column H or parse from notes
+                                    substage: row.Substage || parseSubstageFromNotes(row.Notes, status)
+                                };
+                            });
+                        
+                        filteredTasks = [...allTasks];
+                        
+                        populateFilters();
+                        renderCurrentView();
+                        loading.style.display = 'none';
+                    },
+                    error: function(err) {
+                        console.error('Parse error:', err);
+                        error.textContent = 'Error loading tasks: ' + err.message + '. Make sure the Google Sheet is publicly accessible.';
+                        error.style.display = 'block';
+                        loading.style.display = 'none';
+                    }
+                });
             } catch (err) {
                 console.error('Error loading data:', err);
                 error.textContent = 'Error loading tasks: ' + err.message;
                 error.style.display = 'block';
                 loading.style.display = 'none';
             }
+        }
+
+        function parseSubstageFromNotes(notes, status) {
+            if (!notes || status !== 'In Progress') return null;
+            
+            const notesLower = notes.toLowerCase();
+            if (notesLower.includes('stage:') || notesLower.includes('substage:')) {
+                if (notesLower.includes('preparation')) return 'Preparation';
+                if (notesLower.includes('prepared')) return 'Prepared';
+                if (notesLower.includes('in viewer') || notesLower.includes('viewer')) return 'In Viewer';
+                if (notesLower.includes('sent to client') || notesLower.includes('client')) return 'Sent to Client';
+            }
+            return null;
         }
 
         function populateFilters() {
@@ -838,7 +888,7 @@
                 if (projectFilter && task.project !== projectFilter) return false;
                 if (personFilter && task.person !== personFilter) return false;
                 if (searchFilter && !task.name.toLowerCase().includes(searchFilter) && 
-                    !task.description.toLowerCase().includes(searchFilter)) return false;
+                    !task.notes.toLowerCase().includes(searchFilter)) return false;
                 return true;
             });
 
@@ -887,8 +937,13 @@
 
         function renderTaskItem(task) {
             const today = new Date();
-            const due = new Date(task.dueDate);
-            const isOverdue = due < today && task.status !== 'Completed';
+            let isOverdue = false;
+            
+            if (task.dueDate) {
+                const due = new Date(task.dueDate);
+                isOverdue = due < today && task.status !== 'Completed';
+            }
+            
             const statusClass = task.status.toLowerCase().replace(/ /g, '-');
             
             let substageHTML = '';
@@ -897,24 +952,29 @@
                 substageHTML = `<span class="substage-badge ${substageClass}">🔄 ${task.substage}</span>`;
             }
             
+            let notesHTML = '';
+            if (task.notes) {
+                notesHTML = `<div class="notes-text">📝 ${task.notes}</div>`;
+            }
+            
             return `
                 <div class="task-item ${statusClass}">
                     <div class="task-header">
-                        <div>
+                        <div style="flex: 1;">
                             <div class="task-title">${task.name}</div>
-                            <div style="color: #6c757d; font-size: 14px; margin-top: 5px;">${task.description}</div>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
                             <span class="status-badge ${statusClass}">${task.status}</span>
                             ${substageHTML}
                         </div>
                     </div>
+                    ${notesHTML}
                     <div class="task-meta">
                         <span class="task-meta-item person">👤 ${task.person}</span>
                         <span class="task-meta-item project">📁 ${task.project}</span>
-                        <span class="task-meta-item ${isOverdue ? 'overdue' : 'due'}">
+                        ${task.dueDate ? `<span class="task-meta-item ${isOverdue ? 'overdue' : 'due'}">
                             📅 Due: ${task.dueDate}${isOverdue ? ' (OVERDUE)' : ''}
-                        </span>
+                        </span>` : ''}
                     </div>
                 </div>
             `;
@@ -943,6 +1003,18 @@
                     </div>
                 `;
             });
+            
+            // Add count for tasks without substage
+            const noSubstage = inProgressTasks.filter(t => !t.substage).length;
+            if (noSubstage > 0) {
+                html += `
+                    <div class="substage-stat" style="color: #6c757d;">
+                        <div class="count">${noSubstage}</div>
+                        <div class="substage-label">No Stage Set</div>
+                    </div>
+                `;
+            }
+            
             html += '</div>';
 
             container.innerHTML = html;
@@ -957,10 +1029,10 @@
                 return;
             }
 
-            const substages = ['Preparation', 'Prepared', 'In Viewer', 'Sent to Client'];
+            const substages = ['Preparation', 'Prepared', 'In Viewer', 'Sent to Client', null];
             const substageData = substages.map(stage => ({
-                stage,
-                tasks: inProgressTasks.filter(t => t.substage === stage)
+                stage: stage || 'No Stage Set',
+                tasks: inProgressTasks.filter(t => stage === null ? !t.substage : t.substage === stage)
             }));
 
             content.innerHTML = '';
@@ -971,12 +1043,12 @@
                 const section = document.createElement('div');
                 section.className = 'person-section';
                 
-                const className = data.stage.toLowerCase().replace(/ /g, '-');
                 const icons = {
                     'Preparation': '📝',
                     'Prepared': '✅',
                     'In Viewer': '👁️',
-                    'Sent to Client': '📤'
+                    'Sent to Client': '📤',
+                    'No Stage Set': '❓'
                 };
                 
                 section.innerHTML = `
@@ -999,6 +1071,7 @@
             const blocked = filteredTasks.filter(t => t.status === 'Blocked').length;
             const today = new Date();
             const overdue = filteredTasks.filter(t => {
+                if (!t.dueDate) return false;
                 const due = new Date(t.dueDate);
                 return due < today && t.status !== 'Completed';
             }).length;
@@ -1033,7 +1106,7 @@
             if (filteredTasks.length === 0) {
                 content.innerHTML = '<div class="empty-state"><h3>No tasks found</h3><p>Try adjusting your filters</p></div>';
             } else {
-                const sortOrder = { 'Not Started': 1, 'In Progress': 2, 'Blocked': 3, 'On Hold': 4, 'Completed': 5 };
+                const sortOrder = { 'Not Started': 1, 'In Progress': 2, 'Blocked': 3, 'Completed': 4 };
                 const sortedTasks = [...filteredTasks].sort((a, b) => sortOrder[a.status] - sortOrder[b.status]);
                 content.innerHTML = sortedTasks.map(task => renderTaskItem(task)).join('');
             }
@@ -1126,6 +1199,7 @@
             const blocked = projectTasks.filter(t => t.status === 'Blocked').length;
             const today = new Date();
             const overdue = projectTasks.filter(t => {
+                if (!t.dueDate) return false;
                 const due = new Date(t.dueDate);
                 return due < today && t.status !== 'Completed';
             }).length;
@@ -1163,7 +1237,7 @@
             if (projectTasks.length === 0) {
                 tasksContainer.innerHTML = '<div class="empty-state"><h3>No tasks found</h3><p>Try adjusting your filters</p></div>';
             } else {
-                const sortOrder = { 'Not Started': 1, 'In Progress': 2, 'Blocked': 3, 'On Hold': 4, 'Completed': 5 };
+                const sortOrder = { 'Not Started': 1, 'In Progress': 2, 'Blocked': 3, 'Completed': 4 };
                 const sortedTasks = [...projectTasks].sort((a, b) => sortOrder[a.status] - sortOrder[b.status]);
                 tasksContainer.innerHTML = sortedTasks.map(task => renderTaskItem(task)).join('');
             }
@@ -1222,6 +1296,7 @@
             const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
             
             const weekTasks = filteredTasks.filter(task => {
+                if (!task.dueDate) return false;
                 const due = new Date(task.dueDate);
                 return due >= today && due <= weekFromNow;
             }).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
@@ -1240,6 +1315,7 @@
             const currentYear = today.getFullYear();
             
             const monthTasks = filteredTasks.filter(task => {
+                if (!task.dueDate) return false;
                 const due = new Date(task.dueDate);
                 return due.getMonth() === currentMonth && due.getFullYear() === currentYear;
             }).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
@@ -1255,6 +1331,7 @@
         function renderTimelineView() {
             const tasksByDate = {};
             filteredTasks.forEach(task => {
+                if (!task.dueDate) return;
                 const date = task.dueDate;
                 if (!tasksByDate[date]) {
                     tasksByDate[date] = [];
@@ -1267,7 +1344,7 @@
             const content = document.getElementById('timelineContent');
             
             if (sortedDates.length === 0) {
-                content.innerHTML = '<div class="empty-state"><h3>No tasks found</h3><p>Try adjusting your filters</p></div>';
+                content.innerHTML = '<div class="empty-state"><h3>No tasks with due dates</h3><p>Try adjusting your filters</p></div>';
                 return;
             }
 
