@@ -90,68 +90,15 @@
             border-left: 4px solid #c00;
         }
 
-        .setup-instructions {
-            background: #fff3cd;
-            border: 2px solid #ffc107;
-            border-radius: 12px;
-            padding: 30px;
-            margin: 40px;
-            color: #856404;
-        }
-
-        .setup-instructions h2 {
-            color: #856404;
-            margin-bottom: 20px;
-            font-size: 24px;
-        }
-
-        .setup-instructions h3 {
-            color: #856404;
-            margin-top: 20px;
-            margin-bottom: 10px;
-            font-size: 18px;
-        }
-
-        .setup-instructions ol {
-            margin-left: 20px;
-            line-height: 1.8;
-        }
-
-        .setup-instructions li {
-            margin-bottom: 10px;
-        }
-
-        .setup-instructions code {
-            background: #fff;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: monospace;
-            color: #d63384;
-        }
-
-        .setup-instructions .highlight {
-            background: #fff;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            font-weight: 600;
-        }
-
-        .test-button {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
+        .success-banner {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px 40px;
+            border-bottom: 2px solid #28a745;
             font-size: 14px;
-            font-weight: 700;
-            margin-top: 15px;
-            transition: all 0.3s;
-        }
-
-        .test-button:hover {
-            background: #218838;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .info-banner {
@@ -167,17 +114,6 @@
 
         .info-banner strong {
             font-weight: 700;
-        }
-
-        .success-banner {
-            background: #d4edda;
-            color: #155724;
-            padding: 15px 40px;
-            border-bottom: 2px solid #28a745;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
 
         .nav-tabs {
@@ -685,39 +621,11 @@
             <button class="refresh-button-header" onclick="loadData()">🔄 Refresh Data</button>
         </div>
 
-        <div id="setupInstructions" class="setup-instructions" style="display: none;">
-            <h2>🔧 Setup Required: Make Your Google Sheet Public</h2>
-            
-            <p><strong>The dashboard cannot connect to your Google Sheet yet.</strong> Follow these steps to enable access:</p>
-            
-            <h3>Step 1: Open Share Settings</h3>
-            <ol>
-                <li>Go to your Google Sheet: <a href="https://docs.google.com/spreadsheets/d/11TyGx16R16BYNRjYI38e9LFZD4Tck6FC33a3P66u_kg/edit" target="_blank">Open Sheet</a></li>
-                <li>Click the <strong>"Share"</strong> button in the top-right corner</li>
-            </ol>
-
-            <h3>Step 2: Change Access Settings</h3>
-            <ol>
-                <li>Under "General access", click the dropdown that says "Restricted"</li>
-                <li>Select <strong>"Anyone with the link"</strong></li>
-                <li>Make sure the role is set to <strong>"Viewer"</strong></li>
-                <li>Click <strong>"Done"</strong></li>
-            </ol>
-
-            <div class="highlight">
-                ⚠️ This allows anyone with the link to VIEW your sheet (not edit). The dashboard only reads data.
-            </div>
-
-            <h3>Step 3: Test Connection</h3>
-            <p>After making your sheet public, click the button below to test the connection:</p>
-            <button class="test-button" onclick="loadData()">Test Connection & Load Data</button>
-        </div>
-
         <div id="successBanner" class="success-banner" style="display: none;">
             ✅ <strong>Connected!</strong> Successfully loaded <span id="taskCount">0</span> tasks from your Google Sheet.
         </div>
 
-        <div id="loading" class="loading" style="display: none;">Loading tasks from Google Sheets</div>
+        <div id="loading" class="loading">Loading tasks from Google Sheets</div>
         <div id="error" class="error" style="display: none;"></div>
 
         <div id="mainContent" style="display: none;">
@@ -880,18 +788,17 @@
         let currentView = 'overview';
         let currentProject = null;
 
-        const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/11TyGx16R16BYNRjYI38e9LFZD4Tck6FC33a3P66u_kg/export?format=csv&gid=0';
+        // Using the published Google Sheets CSV URL
+        const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-h3CRESg-c-6PQkkNpYb-kyD4eUheBbiAD-ae6h-b6CoNJn9s9JoIOfrNku5zkShSsqdiCjABYUZE/pub?output=csv';
 
         async function loadData() {
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
-            const setupInstructions = document.getElementById('setupInstructions');
             const mainContent = document.getElementById('mainContent');
             const successBanner = document.getElementById('successBanner');
             
             loading.style.display = 'block';
             error.style.display = 'none';
-            setupInstructions.style.display = 'none';
             successBanner.style.display = 'none';
 
             try {
@@ -932,7 +839,6 @@
                         filteredTasks = [...allTasks];
                         
                         loading.style.display = 'none';
-                        setupInstructions.style.display = 'none';
                         mainContent.style.display = 'block';
                         successBanner.style.display = 'flex';
                         document.getElementById('taskCount').textContent = allTasks.length;
@@ -943,24 +849,14 @@
                     error: function(err) {
                         console.error('Parse error:', err);
                         loading.style.display = 'none';
-                        
-                        if (err.message && err.message.includes('404')) {
-                            setupInstructions.style.display = 'block';
-                            mainContent.style.display = 'none';
-                        } else {
-                            error.textContent = 'Error loading tasks: ' + err.message + '. The Google Sheet may not be publicly accessible.';
-                            error.style.display = 'block';
-                            setupInstructions.style.display = 'block';
-                            mainContent.style.display = 'none';
-                        }
+                        error.textContent = 'Error loading tasks: ' + err.message + '. Please make sure the Google Sheet is published correctly.';
+                        error.style.display = 'block';
                     }
                 });
             } catch (err) {
                 console.error('Error loading data:', err);
                 loading.style.display = 'none';
-                setupInstructions.style.display = 'block';
-                mainContent.style.display = 'none';
-                error.textContent = 'Error: Could not connect to Google Sheet. Please make sure it is publicly accessible.';
+                error.textContent = 'Error: Could not connect to Google Sheet. ' + err.message;
                 error.style.display = 'block';
             }
         }
@@ -1519,7 +1415,7 @@
             document.getElementById(viewName + 'View').classList.add('active');
         }
 
-        // Try to load data on page load
+        // Load data on page load
         loadData();
     </script>
 </body>
