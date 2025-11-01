@@ -997,7 +997,7 @@
                         }
 
                         allTasks = results.data
-                            .filter(row => row.Name && row.Project && row.Task && row.Status)
+                            .filter(row => row.x && row.Project && row.Task && row.Status)
                             .map((row, index) => {
                                 let status = row.Status.trim();
                                 if (status.toLowerCase() === 'in progress') status = 'In Progress';
@@ -1007,7 +1007,7 @@
                                 
                                 return {
                                     taskId: 'T' + String(index + 1).padStart(3, '0'),
-                                    person: row.Name.trim(),
+                                    person: row.x.trim(),
                                     project: row.Project.trim(),
                                     name: row.Task.trim(),
                                     startDate: row['Start Date'] || '',
