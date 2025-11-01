@@ -47,7 +47,12 @@
             opacity: 0.9;
         }
 
-        .refresh-button-header {
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .refresh-button-header, .email-button-header {
             background: rgba(255, 255, 255, 0.2);
             color: white;
             border: none;
@@ -59,7 +64,7 @@
             transition: all 0.3s;
         }
 
-        .refresh-button-header:hover {
+        .refresh-button-header:hover, .email-button-header:hover {
             background: rgba(255, 255, 255, 0.3);
         }
 
@@ -609,6 +614,141 @@
             border-radius: 6px;
             font-style: italic;
         }
+
+        /* Email modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+        }
+
+        .modal-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .email-preview {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .email-preview h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .email-preview pre {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .copy-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .copy-button:hover {
+            background: #5568d3;
+        }
+
+        .instructions-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .instructions-box h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .instructions-box p {
+            color: #856404;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .instructions-box code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
     </style>
 </head>
 <body>
@@ -618,7 +758,10 @@
                 <h1>📊 Team Task Tracker</h1>
                 <div class="subtitle">Multi-view dashboard with workflow stages</div>
             </div>
-            <button class="refresh-button-header" onclick="loadData()">🔄 Refresh Data</button>
+            <div class="header-actions">
+                <button class="email-button-header" onclick="showEmailModal()">📧 Daily Emails</button>
+                <button class="refresh-button-header" onclick="loadData()">🔄 Refresh Data</button>
+            </div>
         </div>
 
         <div id="successBanner" class="success-banner" style="display: none;">
@@ -635,10 +778,11 @@
 
             <div class="nav-tabs">
                 <button class="nav-tab active" onclick="switchView('overview')">📈 Overview</button>
+                <button class="nav-tab" onclick="switchView('today')">📅 Today</button>
                 <button class="nav-tab" onclick="switchView('projects')">📁 Projects</button>
                 <button class="nav-tab" onclick="switchView('people')">👥 People</button>
-                <button class="nav-tab" onclick="switchView('week')">📅 This Week</button>
-                <button class="nav-tab" onclick="switchView('month')">📆 This Month</button>
+                <button class="nav-tab" onclick="switchView('week')">📆 This Week</button>
+                <button class="nav-tab" onclick="switchView('month')">🗓️ This Month</button>
                 <button class="nav-tab" onclick="switchView('timeline')">🕐 Timeline</button>
                 <button class="nav-tab" onclick="switchView('workflow')">🔄 Workflow Stages</button>
             </div>
@@ -697,6 +841,17 @@
                 <div id="overviewStats" class="stats-grid"></div>
                 <div id="workflowStagesOverview"></div>
                 <div id="overviewContent"></div>
+            </div>
+
+            <!-- Today View -->
+            <div id="todayView" class="view-container">
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Today's Tasks</h2>
+                        <p class="view-subtitle">Tasks due today and overdue items</p>
+                    </div>
+                </div>
+                <div id="todayContent"></div>
             </div>
 
             <!-- Projects View -->
@@ -781,6 +936,31 @@
         </div>
     </div>
 
+    <!-- Email Modal -->
+    <div id="emailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📧 Daily Email Reports</h2>
+                <button class="modal-close" onclick="closeEmailModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="instructions-box">
+                    <h4>📋 How to Set Up Automated Daily Emails</h4>
+                    <p>Use the Google Apps Script below to automatically send these emails every day:</p>
+                    <ol style="margin-left: 20px; line-height: 1.8;">
+                        <li>Open your Google Sheet</li>
+                        <li>Click <strong>Extensions → Apps Script</strong></li>
+                        <li>Copy and paste the script provided below</li>
+                        <li>Replace email addresses in the script with actual emails</li>
+                        <li>Click <strong>Run → sendDailyTaskEmails</strong> to test</li>
+                        <li>Set up a trigger: <strong>Triggers → Add Trigger → Time-driven → Day timer → 8-9am</strong></li>
+                    </ol>
+                </div>
+                <div id="emailPreviewContent"></div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script>
         let allTasks = [];
@@ -788,7 +968,6 @@
         let currentView = 'overview';
         let currentProject = null;
 
-        // Using the published Google Sheets CSV URL
         const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-h3CRESg-c-6PQkkNpYb-kyD4eUheBbiAD-ae6h-b6CoNJn9s9JoIOfrNku5zkShSsqdiCjABYUZE/pub?output=csv';
 
         async function loadData() {
@@ -813,7 +992,6 @@
                             throw new Error('No data received from Google Sheet');
                         }
 
-                        // Parse the data from Google Sheets
                         allTasks = results.data
                             .filter(row => row.x && row.Project && row.Task && row.Status)
                             .map((row, index) => {
@@ -935,6 +1113,9 @@
                 case 'overview':
                     renderOverview();
                     break;
+                case 'today':
+                    renderTodayView();
+                    break;
                 case 'projects':
                     if (currentProject) {
                         renderProjectDetail(currentProject);
@@ -1003,6 +1184,283 @@
                     </div>
                 </div>
             `;
+        }
+
+        function renderTodayView() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const todayStr = today.toISOString().split('T')[0];
+            
+            const overdueTasks = filteredTasks.filter(task => {
+                if (!task.dueDate || task.status === 'Completed') return false;
+                const due = new Date(task.dueDate);
+                return due < today;
+            });
+
+            const todayTasks = filteredTasks.filter(task => {
+                if (!task.dueDate || task.status === 'Completed') return false;
+                return task.dueDate === todayStr;
+            });
+
+            const content = document.getElementById('todayContent');
+            
+            let html = '';
+            
+            if (overdueTasks.length > 0) {
+                html += `
+                    <div class="person-section">
+                        <div class="person-header" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
+                            <div class="person-avatar">⚠️</div>
+                            <div class="person-info">
+                                <h3>Overdue Tasks</h3>
+                                <p>${overdueTasks.length} task${overdueTasks.length !== 1 ? 's' : ''} need${overdueTasks.length === 1 ? 's' : ''} attention</p>
+                            </div>
+                        </div>
+                        <div class="tasks-list">
+                            ${overdueTasks.map(task => renderTaskItem(task)).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (todayTasks.length > 0) {
+                html += `
+                    <div class="person-section">
+                        <div class="person-header">
+                            <div class="person-avatar">📅</div>
+                            <div class="person-info">
+                                <h3>Due Today</h3>
+                                <p>${todayTasks.length} task${todayTasks.length !== 1 ? 's' : ''} due today</p>
+                            </div>
+                        </div>
+                        <div class="tasks-list">
+                            ${todayTasks.map(task => renderTaskItem(task)).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (html === '') {
+                content.innerHTML = '<div class="empty-state"><h3>No tasks due today! 🎉</h3><p>You\'re all caught up for today</p></div>';
+            } else {
+                content.innerHTML = html;
+            }
+        }
+
+        function showEmailModal() {
+            const modal = document.getElementById('emailModal');
+            const content = document.getElementById('emailPreviewContent');
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const todayStr = today.toISOString().split('T')[0];
+            const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+            const people = {};
+            allTasks.forEach(task => {
+                if (!people[task.person]) {
+                    people[task.person] = { overdue: [], today: [], tomorrow: [] };
+                }
+                
+                if (task.status !== 'Completed' && task.dueDate) {
+                    const dueDate = new Date(task.dueDate);
+                    dueDate.setHours(0, 0, 0, 0);
+                    
+                    if (dueDate < today) {
+                        people[task.person].overdue.push(task);
+                    } else if (task.dueDate === todayStr) {
+                        people[task.person].today.push(task);
+                    } else if (task.dueDate === tomorrowStr) {
+                        people[task.person].tomorrow.push(task);
+                    }
+                }
+            });
+
+            let html = '';
+            
+            Object.keys(people).sort().forEach(personName => {
+                const personTasks = people[personName];
+                const totalTasks = personTasks.overdue.length + personTasks.today.length + personTasks.tomorrow.length;
+                
+                if (totalTasks === 0) return;
+
+                const emailBody = generateEmailForPerson(personName, personTasks);
+                
+                html += `
+                    <div class="email-preview">
+                        <h3>📧 Email for ${personName}</h3>
+                        <pre>${emailBody}</pre>
+                        <button class="copy-button" onclick="copyToClipboard(\`${emailBody.replace(/`/g, '\\`')}\`, this)">📋 Copy Email</button>
+                    </div>
+                `;
+            });
+
+            if (html === '') {
+                html = '<div class="empty-state"><h3>No tasks to email about!</h3><p>Everyone is up to date 🎉</p></div>';
+            } else {
+                html += `
+                    <div class="email-preview" style="background: #e8f5e9;">
+                        <h3>🤖 Google Apps Script for Automation</h3>
+                        <pre>${generateGoogleAppsScript()}</pre>
+                        <button class="copy-button" onclick="copyToClipboard(\`${generateGoogleAppsScript().replace(/`/g, '\\`')}\`, this)">📋 Copy Script</button>
+                    </div>
+                `;
+            }
+
+            content.innerHTML = html;
+            modal.classList.add('active');
+        }
+
+        function closeEmailModal() {
+            document.getElementById('emailModal').classList.remove('active');
+        }
+
+        function generateEmailForPerson(personName, tasks) {
+            const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            let email = `Subject: Your Task Summary for ${today}\n\n`;
+            email += `Hi ${personName},\n\n`;
+            email += `Here's your task summary for today:\n\n`;
+
+            if (tasks.overdue.length > 0) {
+                email += `⚠️ OVERDUE TASKS (${tasks.overdue.length}):\n`;
+                tasks.overdue.forEach(task => {
+                    email += `  • ${task.name} - ${task.project} (Due: ${task.dueDate})\n`;
+                    if (task.notes) email += `    Notes: ${task.notes}\n`;
+                });
+                email += `\n`;
+            }
+
+            if (tasks.today.length > 0) {
+                email += `📅 DUE TODAY (${tasks.today.length}):\n`;
+                tasks.today.forEach(task => {
+                    email += `  • ${task.name} - ${task.project}\n`;
+                    if (task.notes) email += `    Notes: ${task.notes}\n`;
+                });
+                email += `\n`;
+            }
+
+            if (tasks.tomorrow.length > 0) {
+                email += `📆 DUE TOMORROW (${tasks.tomorrow.length}):\n`;
+                tasks.tomorrow.forEach(task => {
+                    email += `  • ${task.name} - ${task.project}\n`;
+                    if (task.notes) email += `    Notes: ${task.notes}\n`;
+                });
+                email += `\n`;
+            }
+
+            email += `Have a productive day!\n`;
+            email += `\nThis is an automated email from your Task Tracker.`;
+
+            return email;
+        }
+
+        function generateGoogleAppsScript() {
+            return `function sendDailyTaskEmails() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = sheet.getDataRange().getValues();
+  
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+  var tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  var todayStr = Utilities.formatDate(today, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  var tomorrowStr = Utilities.formatDate(tomorrow, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  
+  // Map person names to email addresses
+  var emailMap = {
+    'Raghav': 'raghav@example.com',
+    'Yohaanne': 'yohaanne@example.com',
+    'Zeenath': 'zeenath@example.com'
+  };
+  
+  var personTasks = {};
+  
+  for (var i = 1; i < data.length; i++) {
+    var person = data[i][0];
+    var project = data[i][1];
+    var task = data[i][2];
+    var dueDate = data[i][4];
+    var status = data[i][5];
+    var notes = data[i][6] || '';
+    
+    if (!person || !project || !task || !status) continue;
+    if (status.toLowerCase() === 'completed') continue;
+    
+    if (!personTasks[person]) {
+      personTasks[person] = { overdue: [], today: [], tomorrow: [] };
+    }
+    
+    if (dueDate) {
+      var dueDateStr = Utilities.formatDate(new Date(dueDate), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      var taskObj = { name: task, project: project, dueDate: dueDateStr, notes: notes };
+      
+      if (dueDateStr < todayStr) {
+        personTasks[person].overdue.push(taskObj);
+      } else if (dueDateStr === todayStr) {
+        personTasks[person].today.push(taskObj);
+      } else if (dueDateStr === tomorrowStr) {
+        personTasks[person].tomorrow.push(taskObj);
+      }
+    }
+  }
+  
+  for (var person in personTasks) {
+    var tasks = personTasks[person];
+    var totalTasks = tasks.overdue.length + tasks.today.length + tasks.tomorrow.length;
+    
+    if (totalTasks === 0 || !emailMap[person]) continue;
+    
+    var subject = 'Your Task Summary for ' + Utilities.formatDate(today, Session.getScriptTimeZone(), 'EEEE, MMMM d, yyyy');
+    var body = 'Hi ' + person + ',\\n\\n';
+    body += "Here's your task summary for today:\\n\\n";
+    
+    if (tasks.overdue.length > 0) {
+      body += '⚠️ OVERDUE TASKS (' + tasks.overdue.length + '):\\n';
+      tasks.overdue.forEach(function(task) {
+        body += '  • ' + task.name + ' - ' + task.project + ' (Due: ' + task.dueDate + ')\\n';
+        if (task.notes) body += '    Notes: ' + task.notes + '\\n';
+      });
+      body += '\\n';
+    }
+    
+    if (tasks.today.length > 0) {
+      body += '📅 DUE TODAY (' + tasks.today.length + '):\\n';
+      tasks.today.forEach(function(task) {
+        body += '  • ' + task.name + ' - ' + task.project + '\\n';
+        if (task.notes) body += '    Notes: ' + task.notes + '\\n';
+      });
+      body += '\\n';
+    }
+    
+    if (tasks.tomorrow.length > 0) {
+      body += '📆 DUE TOMORROW (' + tasks.tomorrow.length + '):\\n';
+      tasks.tomorrow.forEach(function(task) {
+        body += '  • ' + task.name + ' - ' + task.project + '\\n';
+        if (task.notes) body += '    Notes: ' + task.notes + '\\n';
+      });
+      body += '\\n';
+    }
+    
+    body += 'Have a productive day!\\n\\n';
+    body += 'This is an automated email from your Task Tracker.';
+    
+    MailApp.sendEmail(emailMap[person], subject, body);
+  }
+}`;
+        }
+
+        function copyToClipboard(text, button) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            });
         }
 
         function renderWorkflowStages(tasks, containerId) {
@@ -1415,7 +1873,14 @@
             document.getElementById(viewName + 'View').classList.add('active');
         }
 
-        // Load data on page load
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('emailModal');
+            if (event.target == modal) {
+                closeEmailModal();
+            }
+        }
+
         loadData();
     </script>
 </body>
